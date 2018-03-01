@@ -195,6 +195,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 
 let cachedCompletionList: CompletionList;
 const hexColorRegex = /^#[\d,a-f,A-F]{1,6}$/;
+const emmetAbbreviationThatBreaksParsing = /\.\d+$/;
 connection.onCompletion(textDocumentPosition => {
 	return runSafe(() => {
 		let document = documents.get(textDocumentPosition.textDocument.uri);
@@ -226,10 +227,10 @@ connection.onCompletion(textDocumentPosition => {
 		if (emmetCompletionList && emmetCompletionList.items) {
 			// Workaround for https://github.com/Microsoft/vscode-css-languageservice/issues/69
 			if (!emmetCompletionList.items.length
-				&& typeof stylesheet['end'] === 'number'
-				&& document.offsetAt(textDocumentPosition.position) > stylesheet['end']) {
+				&& typeof (<any>stylesheet).end === 'number'
+				&& document.offsetAt(textDocumentPosition.position) > (<any>stylesheet).end) {
 				const extractedResults = extractAbbreviation(document, textDocumentPosition.position, { lookAhead: false, syntax: 'css' });
-				if (extractedResults && /\.\d+$/.test(extractedResults.abbreviation)) {
+				if (extractedResults && emmetAbbreviationThatBreaksParsing.test(extractedResults.abbreviation)) {
 					emmetCompletionParticipant.onCssProperty({ propertyName: extractedResults.abbreviation, range: extractedResults.abbreviationRange });
 				}
 			}
